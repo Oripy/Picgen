@@ -43,16 +43,15 @@ class Grid:
         
     def get_rows(self):
         """ returns all rows """
-        return self._rows
+        return deepcopy(self._rows)
     
     def get_cols(self):
         """ returns all columns """
-        return self._cols
+        return deepcopy(self._cols)
         
     def get_grid(self):
         """ returns the whole grid (equivalent to get_rows) """
-#        return deepcopy(self._rows)
-        return self._rows
+        return deepcopy(self._rows)
         
     def set_value(self, col_nbr, row_nbr, value):
         """ set the value at given coordinates """
@@ -89,8 +88,7 @@ class Grid:
         return True
 
 def solve(grid):
-    """ Return a grid with the solution 
-    """    
+    """ Return a grid with the solution """    
     grid = deepcopy(grid)
     
     # Réordonner par ordre du plus long test
@@ -108,108 +106,19 @@ def solve(grid):
 #    row_weights = [[i] for i in xrange(grid.height)]
 
     # Simple_Boxes
-    for col_nbr in xrange(grid.width):
-        grid.set_col(col_nbr, simple_boxes(grid.col_counts[col_nbr],
-                                           grid.get_col(col_nbr)))
-    for row_nbr in xrange(grid.height):
-        grid.set_row(row_nbr, simple_boxes(grid.row_counts[row_nbr],
-                                           grid.get_row(row_nbr)))
+    apply_function_grid(simple_boxes, grid, True)
+
     if VERBOSE:
         print_grid(grid)
-    
-    while True:
-        # Simple_Spaces
-        modif = 0
-        for col_nbr in xrange(grid.width):
-            oldcol = grid.get_col(col_nbr)
-            newcol = simple_spaces(grid.col_counts[col_nbr], oldcol)
-            if oldcol != newcol:
-                vprint("-simple_spaces-")
-                vprint(grid.col_counts[col_nbr])
-                print_row(oldcol)
-                print_row(newcol)
-                grid.set_col(col_nbr, newcol)
-                modif += 1
-        for row_nbr in xrange(grid.height):
-            oldrow = grid.get_row(row_nbr)
-            newrow = simple_spaces(grid.row_counts[row_nbr], oldrow)
-            if oldrow != newrow:
-                vprint("-simple_spaces-")
-                vprint(grid.row_counts[row_nbr])
-                print_row(oldrow)
-                print_row(newrow)
-                modif += 1
-                grid.set_row(row_nbr, newrow)
 
+    while True:        
+        modif = 0
+        # Simple_Spaces
+        modif += apply_function_grid(simple_spaces, grid, True)
         # Forcing
-        for col_nbr in xrange(grid.width):
-            oldcol = grid.get_col(col_nbr)
-            newcol = forcing(grid.col_counts[col_nbr], oldcol)
-            if oldcol != newcol:
-                vprint("-forcing-")
-                vprint(grid.col_counts[col_nbr])
-                print_row(oldcol)
-                print_row(newcol)
-                grid.set_col(col_nbr, newcol)
-                modif += 1
-        for row_nbr in xrange(grid.height):
-            oldrow = grid.get_row(row_nbr)
-            newrow = forcing(grid.row_counts[row_nbr], oldrow)
-            if oldrow != newrow:
-                vprint("-forcing-")
-                vprint(grid.row_counts[row_nbr])
-                print_row(oldrow)
-                print_row(newrow)
-                modif += 1
-                grid.set_row(row_nbr, newrow)
-        
+        modif += apply_function_grid(forcing, grid, True)
         # Glue
-        for col_nbr in xrange(grid.width):
-            oldcol = grid.get_col(col_nbr)
-            newcol = glue(grid.col_counts[col_nbr], oldcol)
-            if oldcol != newcol:
-                vprint("-glue-")
-                vprint(grid.col_counts[col_nbr])
-                print_row(oldcol)
-                print_row(newcol)
-                grid.set_col(col_nbr, newcol)
-                grid.set_col(col_nbr, newcol)
-                modif += 1
-            oldcol.reverse()
-            counts_rev = copy(grid.col_counts[col_nbr])
-            counts_rev.reverse()
-            newcol = glue(counts_rev, oldcol)
-            if oldcol != newcol:
-                vprint("-glue-reverse-")
-                vprint(counts_rev)
-                print_row(oldcol)
-                print_row(newcol)
-                grid.set_col(col_nbr, newcol)
-                newcol.reverse()
-                grid.set_col(col_nbr, newcol)
-                modif += 1
-        for row_nbr in xrange(grid.height):
-            oldrow = grid.get_row(row_nbr)
-            newrow = glue(grid.row_counts[row_nbr], oldrow)
-            if oldrow != newrow:
-                vprint("-glue-")
-                vprint(grid.row_counts[row_nbr])
-                print_row(oldrow)
-                print_row(newrow)
-                grid.set_row(row_nbr, newrow)
-                modif += 1
-            oldrow.reverse()
-            counts_rev = copy(grid.row_counts[row_nbr])
-            counts_rev.reverse()
-            newrow = glue(counts_rev, oldrow)
-            if oldrow != newrow:
-                vprint("-glue-reverse-")
-                vprint(counts_rev)
-                print_row(oldrow)
-                print_row(newrow)
-                newrow.reverse()
-                grid.set_row(row_nbr, newrow)
-                modif += 1
+        modif += apply_function_grid(glue, grid, True)
         if modif == 0:
             break
         else:
@@ -228,6 +137,7 @@ def solve(grid):
 
     col_list = range(grid.width)
     row_list = range(grid.height)    
+
     # Final solving
     while True:
         modif = 0
@@ -258,8 +168,7 @@ def solve(grid):
 def weight_row(counts):
     """ Return the "weight" of the row
     the weight is the size of the counts with space between them
-    weight_row([3,2,4]) => [###.##.####] => 11
-    """
+    weight_row([3,2,4]) => [###.##.####] => 11 """
     return max(sum(counts)+len(counts)-1, 0)
 
 def get_common(row1, row2):
@@ -268,7 +177,6 @@ def get_common(row1, row2):
     row2    [0 0 1 1 1 1 0 2 2 2]
                  | |       |
     row_out [_ _ 1 1 _ _ _ 2 _ _] """
-    
     length = len(row1)
     row_out = [None]*length
     for position in xrange(length):
@@ -277,8 +185,8 @@ def get_common(row1, row2):
     return row_out
     
 def fit(row, length, position):
-    """ Returns True if a serie of "length" blocks fits in "row" at "position"
-    """
+    """ Returns True if a serie of "length" blocks
+        fits in "row" at "position" """
     len_row = len(row)
     # Convert if negative position given
     if position < 0:
@@ -299,12 +207,55 @@ def fit(row, length, position):
             return False
     return True
 
+def apply_function_grid(function, grid, both_ways = False):
+    """ Apply given function to the grid
+        and return the number of modifications 
+        if both_ways, the function is applied also on the reversed row """
+    modif = 0
+    for col_nbr in xrange(grid.width):
+        oldcol = grid.get_col(col_nbr)
+        newcol = apply_function(function, grid.col_counts[col_nbr], oldcol)
+        if both_ways:
+            newcol = apply_function(function,
+                                    grid.col_counts[col_nbr], newcol, True)
+        if oldcol != newcol:
+            vprint(function.__name__)
+            vprint(grid.col_counts[col_nbr])
+            print_row(oldcol)
+            print_row(newcol)
+            grid.set_col(col_nbr, newcol)
+            modif += 1
+    for row_nbr in xrange(grid.height):
+        oldrow = grid.get_row(row_nbr)
+        newrow = function(grid.row_counts[row_nbr], oldrow)
+        if both_ways:
+            newrow = apply_function(function,
+                                    grid.row_counts[row_nbr], newrow, True)
+        if oldrow != newrow:
+            vprint(function.__name__)
+            vprint(grid.row_counts[row_nbr])
+            print_row(oldrow)
+            print_row(newrow)
+            modif += 1
+            grid.set_row(row_nbr, newrow)
+    return modif
+
+def apply_function(function, row_counts, row, rev = False):
+    """ Apply given function to one row and return the row
+        if rev, the function is applied on the reversed row """
+    if rev:
+        row = reverse(row)
+        row_counts = reverse(row_counts)
+    row_out = function(row_counts, row)
+    if rev:
+        row_out = reverse(row_out)
+    return row_out
+
 def convert(row):
     """ Convert a numbered list in a True/False/None list
         [0, 0, None, 1, 1, -1, 2, 2, None, None]
         
-        [False, False, None, True, True, False, True, True, None, None]
-    """
+        [False, False, None, True, True, False, True, True, None, None] """
     length = len(row)
     row_out = [None]*length
     for i in xrange(length):
@@ -320,8 +271,7 @@ def recover(oldrow, newrow):
         oldrow:  [None,  True, None, False]
         newrow:  [False, None, None, None]
         
-        row_out: [False, True, None, False]
-    """
+        row_out: [False, True, None, False] """
     length = len(oldrow)
     row_out = [None]*length
     for i in xrange(length):
@@ -334,11 +284,16 @@ def recover(oldrow, newrow):
     return row_out
 
 def reverse(row):
+    """ Output a reversed version of the input row """
+    row_out = row[:]
+    row_out.reverse()
+    return row_out
+
+def reverse_num(row):
     """ reverse a numbered row 
         [-2 2 2 2 -1 -1 -1 1 1]
        print 
-        [ 0 1 1 1 -1 -1 -1 2 2]
-    """    
+        [ 0 1 1 1 -1 -1 -1 2 2] """    
     len_counts = max(row)
     row_out = []
     for item in row:
@@ -347,7 +302,7 @@ def reverse(row):
         else:
             row_out.append((item + len_counts) * -1)
             
-    row_out.reverse()
+    row_out = reverse(row_out)
     return row_out
     
 def simple_boxes(row_counts, row):
@@ -357,8 +312,7 @@ def simple_boxes(row_counts, row):
          [# # # # . # # # . .]
          [. . # # # # . # # #]
               | |       |
-         [_ _ # # _ _ _ # _ _]  """
-         
+         [_ _ # # _ _ _ # _ _] """   
     nbr = len(row_counts)
     length = len(row)
     
@@ -371,7 +325,7 @@ def simple_boxes(row_counts, row):
 
     num = 0 # Current row_count number
     for i in xrange(nbr):
-        for j in xrange(row_counts[i]):
+        for _ in xrange(row_counts[i]):
             row1[num] = i+1
             row2[num+blankspace] = i+1
             num += 1
@@ -379,7 +333,6 @@ def simple_boxes(row_counts, row):
             row1[num] = 0
             row2[num+blankspace] = 0
             num += 1
-    
     row_out = get_common(row1, row2)
 
     # Include the results in the given row
@@ -400,7 +353,6 @@ def simple_spaces(row_counts, row):
          [. # # # . . . . # .]
           |     |     | | | |
          [. _ _ # _ _ . . # .] """
-
     length = len(row)
     nbr = len(row_counts)
     if nbr == 0:
@@ -416,14 +368,12 @@ def simple_spaces(row_counts, row):
         row1 = read_simple_spaces(row_counts, row)
         
         if row1 != False:  
-            row_counts_rev = copy(row_counts)
-            row_counts_rev.reverse()
-            row_rev = copy(row)
-            row_rev.reverse()        
+            row_counts_rev = reverse(row_counts)
+            row_rev = reverse(row)
             row2 = read_simple_spaces(row_counts_rev, row_rev)
 
             if row2 != False:
-                row2 = reverse(row2)
+                row2 = reverse_num(row2)
                 row_out = get_common(row1, row2)
                 row_out = convert(row_out)
                 row_out = recover(row, row_out)
@@ -513,8 +463,7 @@ def forcing(row_counts, row):
          [# # # . . . . # # .]
          [. # # # . . . . # #]
             | |   | | |   |
-         [_ # # _ . . . _ # _]  """
-    
+         [_ # # _ . . . _ # _] """
     if not (None in row):
         # Row is already solved, nothing to change
         return row
@@ -525,14 +474,12 @@ def forcing(row_counts, row):
         row1 = read_forcing(row_counts, row)
         
         if row1 != False:     
-            row_counts_rev = copy(row_counts)
-            row_counts_rev.reverse()
-            row_rev = copy(row)
-            row_rev.reverse()        
+            row_counts_rev = reverse(row_counts)
+            row_rev = reverse(row)        
             row2 = read_forcing(row_counts_rev, row_rev)
             
             if row2 != False: 
-                row2 = reverse(row2)
+                row2 = reverse_num(row2)
             
                 row_out = get_common(row1, row2)
                 row_out = convert(row_out)
@@ -549,7 +496,6 @@ def read_forcing(row_counts, row):
      3,2 [_ _ _ _   . _   . _ _  _]
     
          [1 1 1 -1 -1 -1 -1 2 2 -2] """
-         
     length = len(row)
     nbr = len(row_counts)
     row_out = [None]*length
@@ -620,8 +566,7 @@ def glue(row_counts, row):
         return row
 
 def get_permutations(row_counts, row):
-    """ returns all possible solutions of a row
-    """
+    """ returns all possible solutions of a row """
     length = len(row)
     if len(row_counts) == 0:
         return [[False]*length]
@@ -680,8 +625,7 @@ def get_permutations(row_counts, row):
 def solve_row(permutations, row):
     """ Returns the list of permutations that matches the given row
     and also returns the row with all elements
-    that are common to all those permutations
-    """
+    that are common to all those permutations """
     length = len(row)
     valid_permutations = []
     for permutation in permutations:
@@ -707,8 +651,7 @@ def solve_row(permutations, row):
     return valid_permutations, new_row
 
 def check_solution(grid):
-    """ Check if the solution matches the counts
-    """
+    """ Check if the solution matches the counts """
     if not grid.is_complete():
         return False
     else:
@@ -725,7 +668,7 @@ def check_solution(grid):
                     count = 0
             if count != 0:
                 col_counts[-1].append(count)
-        
+
         row_counts = []
         for row in grid.get_rows():
             row_counts.append([])
@@ -739,13 +682,12 @@ def check_solution(grid):
                     count = 0
             if count != 0:
                 row_counts[-1].append(count)
-                   
+
         return ((row_counts == grid.row_counts) and
                 (col_counts == grid.col_counts))
 
 def print_grid(grid):
-    """ pretty print of the grid with counts
-    """    
+    """ Pretty print of the grid with counts """    
     # Size on the left space
     size_row_counts = 0
     for count in grid.row_counts:
@@ -753,12 +695,11 @@ def print_grid(grid):
                               len(''.join([str(t)+' ' for t in count])))
     disp_row_counts = []
     empty = [' ' for t in xrange(size_row_counts)]
-    
+
     # Display clues in columns
     height_col_counts = 0
     for col in grid.col_counts:
         height_col_counts = max(height_col_counts, len(col))
-        
     width_col = 0
     for col in grid.col_counts:
         for count in col:
@@ -775,11 +716,11 @@ def print_grid(grid):
             else:
                 line += colempty[:-len(count_str)]+count_str+' '
         disp_col_counts.append(line)
-    
+
     # Display the lines in the reverse order
     for line_nbr in xrange(height_col_counts-1, -1, -1):
         print(''.join(empty)+disp_col_counts[line_nbr])
-        
+
     # Counts in lines
     for row_count in grid.row_counts:
         line = ''.join([str(t)+' ' for t in row_count])
@@ -799,8 +740,7 @@ def print_grid(grid):
     return True
 
 def print_row(row):
-    """ pretty print of one row
-    """    
+    """ Pretty print of one row """    
     out = "["
     for item in row:
         if item == True:
@@ -818,8 +758,7 @@ if __name__ == "__main__":
  
     def unit_test(function, row_counts, row_in, row_out):
         """ This execute a test on one specific function and 
-            checks that the quality of the output is as expected
-        """        
+            checks that the quality of the output is as expected """        
         print("---")
         print("Test "+str(function.__name__))       
         row2 = function(row_counts, row_in)        
@@ -885,8 +824,8 @@ if __name__ == "__main__":
             [None, None, None, False, None, False, None, None, None, False],
             [None, None, None, False, None, False, None, None, None, False]))
     list_unit_test.append(unit_test(forcing, [2],
-            [None, None, None, False, None, False, None, False, None, False],
-            [None, True, None, False, False, False, False, False, False, False]))
+        [None, None, None, False, None, False, None, False, None, False],
+        [None, True, None, False, False, False, False, False, False, False]))
     list_unit_test.append(unit_test(glue, [3, 1],
             [None, False, False, None, True, None, None, None, None, None],
             [False, False, False, None, True, True, None, None, None, None]))
