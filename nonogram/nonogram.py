@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Feb 01 11:36:55 2012
+Loads an empty nonogram grid from a file and solve it.
 
-@author: pmaurier
+Using -p option the program perform a profile of the solving process
+Using -t X option run the solving several times and outputs statistics
 """
 from __future__ import print_function
 
@@ -17,7 +18,7 @@ def load_from_file(filename):
         1.2/1.1/1/2/1/3/1.1/2
     """
     input_file = open(filename)
-    # File format Simon Tatham-like (import only empty grids)
+    # File format Simon Tatham-like (loads only empty grids)
     lines = input_file.readlines()
     
     # Load grid size
@@ -33,7 +34,7 @@ def load_from_file(filename):
         row_counts.append([int(i) for i in counts[width+row_nbr].split('.')])
 
     # The grid
-    return solver.Grid(width, height, col_counts, row_counts)
+    return solver.Grid(col_counts, row_counts)
 
 def main():
     """ Main program    
