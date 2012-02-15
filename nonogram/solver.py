@@ -701,17 +701,17 @@ def get_counts(table):
                 count = 0
         if count != 0:
             row_counts[-1].append(count)
-    return row_counts, col_counts
+    return col_counts, row_counts
 
 def check_solution(grid):
     """ Check if the solution matches the counts """
     if not grid.is_complete():
         return False
     else:
-        row_counts, col_counts = get_counts(grid.get_grid())
+        col_counts, row_counts  = get_counts(grid.get_grid())
 
-        return ((row_counts == grid.row_counts) and
-                (col_counts == grid.col_counts))
+        return ((col_counts == grid.col_counts) and
+                (row_counts == grid.row_counts))
 
 def print_grid(grid):
     """ Pretty print of the grid with counts """    
