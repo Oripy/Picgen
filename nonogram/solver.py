@@ -18,14 +18,21 @@ def set_verbose(verbose):
 
 class Grid:
     """ Grid that describe the game state """
-    def __init__(self, col_counts, row_counts):
+    def __init__(self, col_counts, row_counts, table=None):
         self.width = len(col_counts)
         self.height = len(row_counts)
-        self.col_counts = col_counts     
+        self.col_counts = col_counts
         self.row_counts = row_counts
-        self._rows = [[None]*self.width for _ in range(self.height)]
-        self._cols = [[None]*self.height for _ in range(self.width)]
-        
+        if not table:
+            self._rows = [[None]*self.width for _ in range(self.height)]
+            self._cols = [[None]*self.height for _ in range(self.width)]
+        else:
+            self._rows = table
+            self._cols = [[None]*self.height for _ in range(self.width)]
+            for col_nbr in xrange(self.width):
+                for row_nbr in xrange(self.height):
+                    self._cols[col_nbr][row_nbr] = table[row_nbr][col_nbr]
+
     def get_value(self, col_nbr, row_nbr):
         """ returns the value at given coordinates """
         return self._rows[row_nbr][col_nbr]

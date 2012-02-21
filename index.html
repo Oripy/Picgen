@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Nonogram</title>
+        <style type="text/css">
+            /* Line in a picture */
+            .picture { 
+                height: {{ height_row }}px;
+                padding: 0px;
+                margin: 0px;
+            }
+            .clues {
+                border-bottom: solid 1px;
+                border-right: solid 1px;
+                border-color: transparent;
+                margin: 0px;
+                width: {{ zoom }}px;
+                height: {{ zoom }}px;
+                float: left;
+                text-align: center;
+                line-height: 2em;
+                background: transparent url(images/clues.png);
+            }
+            .empty {
+                border-bottom: solid 1px;
+                border-right: solid 1px;
+                border-color: transparent;
+                margin: 0px;
+                width: {{ zoom }}px;
+                height: {{ zoom }}px;
+                float: left;
+            }
+            .case {
+                border-bottom: solid 1px;
+                border-right: solid 1px;
+                border-color: black;
+                margin: 0px;
+                width: {{ zoom }}px;
+                height: {{ zoom }}px;
+                float: left;
+            }
+        
+            /* Box for informations */
+            .info {
+                border: 1px dashed black;
+                margin: 20px;
+                padding: 10px;
+            }
+        
+            /* Ad formating and positionning */ 
+            .pub {
+                border: 0px;
+                width: 160px;
+                height: 600px;
+                position: absolute;
+                top: 50px;
+                right: 20px;
+            }
+        </style>
+        <script type="text/javascript" src="./static/json2.js"></script>
+        <script type="text/javascript">
+            //
+            // As mentioned at http://en.wikipedia.org/wiki/XMLHttpRequest
+            //
+            if( !window.XMLHttpRequest ) XMLHttpRequest = function() {
+                try{ return new ActiveXObject("Msxml2.XMLHTTP.6.0") }catch(e){}
+                try{ return new ActiveXObject("Msxml2.XMLHTTP.3.0") }catch(e){}
+                try{ return new ActiveXObject("Msxml2.XMLHTTP") }catch(e){}
+                try{ return new ActiveXObject("Microsoft.XMLHTTP") }catch(e){}
+                throw new Error("Could not find an XMLHttpRequest alternative.")
+            };
+
+            //
+            // Makes an AJAX request to a local server function w/ optional arguments
+            //
+            // functionName: the name of the server's AJAX function to call
+            // opt_argv: an Array of arguments for the AJAX function
+            //
+            function Request(function_name, opt_argv) {
+                if (!opt_argv)
+                    opt_argv = new Array();
+
+                // Find if the last arg is a callback function; save it
+                var callback = null;
+                var len = opt_argv.length;
+                if (len > 0 && typeof opt_argv[len-1] == 'function') {
+                    callback = opt_argv[len-1];
+                    opt_argv.length--;
+                }
+                var async = (callback != null);
+
+                // Build an Array of parameters, w/ function_name being the first parameter
+                var params = new Array(function_name);
+                for (var i = 0; i < opt_argv.length; i++) {
+                    params.push(opt_argv[i]);
+                }
+                var body = JSON.stringify(params);
+
+                // Create an XMLHttpRequest 'POST' request w/ an optional callback handler
+                var req = new XMLHttpRequest();
+                req.open('POST', '/rpc', async);
+
+                req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                req.setRequestHeader("Content-length", body.length);
+                req.setRequestHeader("Connection", "close");
+                
+                if (async) {
+                    req.onreadystatechange = function() {
+                        if(req.readyState == 4 && req.status == 200) {
+                            var response = null;
+                            try {
+                                response = JSON.parse(req.responseText);
+                            } catch (e) {
+                                response = req.responseText;
+                            }
+                            callback(response);
+                        }
+                    }
+                }
+
+                // Make the actual request
+                req.send(body);
+            }
+
+            // Adds a stub function that will pass the arguments to the AJAX call
+            function InstallFunction(obj, functionName) {
+                obj[functionName] = function() { Request(functionName, arguments); }
+            }
+        </script>
+    
+        <script type="text/javascript">
+            // Server object that will contain the callable methods
+            var server = {};
+
+            // Insert 'Add' as the name of a callable method
+            InstallFunction(server, 'changeCell');
+
+            // Insert 'Add' as the name of a callable method
+            InstallFunction(server, 'saveState');
+
+            // Handy "macro"
+            function $(id){
+                return document.getElementById(id);
+            }
+
+            // Client function that calls a server rpc and provides a callback
+            function doChangeCell(row_nbr, col_nbr) {
+                server.changeCell(row_nbr, col_nbr, $('table').value, $('name').value, onChangeSuccess);
+            }
+
+            // Callback for after a successful doChangeCell
+            function onChangeSuccess(response) {
+                if (response[response.length-1] == '0') {
+                    $('state').value = "Modified";
+                    var solved = false;
+                } else {
+                    $('state').value = "Solved";
+                    var solved = true;
+                }
+                $('table').value = response.slice(0, -1);
+                for (var i = 0; i < {{ width }}; i++) {
+                    for (var j = 0; j < {{ height }}; j++) {
+                        if (response.charAt(i*{{ width }}+j) == 0) {
+                            $('cell' + i + j).src = "images/white.png";
+                        }
+                        else if (response.charAt(i*{{ width }}+j) == 1) {
+                            $('cell' + i + j).src = "images/black.png";
+                        }
+                        else {
+                            $('cell' + i + j).src = "images/unknow.png";
+                        }
+                        if (solved) {
+                            $('linkcell' + i + j).href = "/";
+                        }
+                    }
+                }
+            }
+            
+            // Client function that calls a server rpc and provides a callback
+            function doSave() {
+                $('state').value = "Saving...";
+                server.saveState($('table').value, $('name').value, onSaveSuccess);
+            }
+
+            // Callback for after a successful doSave
+            function onSaveSuccess(response) {
+                $('state').value = response;
+            }
+        </script>
+    </head>
+    <body>
+        <H1>Nonogram</H1>
+        {{ nonogram|safe }}
+    
+	<input id="name" type="hidden" value="{{ nonogram_name }}" />
+    <input type="button" value="Save" onclick="doSave()" />
+    <input id="state" type="text" value="Loaded" readonly="true" disabled="true" />
+	<div class="info">{{ text_info|safe }}</div>
+
+        <div class="previous">
+            Recently completed 
+        </div>
+
+        <a href="{{ url_logout }}">{{ url_logout_text }}</a>
+        <div class="pub">
+            <script type="text/javascript"><!--
+                google_ad_client = "ca-pub-1874843001677919";
+                /* Image Generator */
+                google_ad_slot = "8123427093";
+                google_ad_width = 160;
+                google_ad_height = 600;
+                //-->
+            </script>
+            <script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+            </script>                    
+        </div>
+	<script type="text/javascript" src="jquery-1.7.1.min.js"></script>
+	<script type="text/javascript">
+	    
+	</script>
+    </body>
+</html>
