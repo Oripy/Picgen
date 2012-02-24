@@ -5,7 +5,7 @@
         <title>Nonogram</title>
         <style type="text/css">
             /* Line in a picture */
-            .picture { 
+            .line { 
                 height: {{ height_row }}px;
                 padding: 0px;
                 margin: 0px;
@@ -199,7 +199,8 @@
 	<div class="info">{{ text_info|safe }}</div>
 
         <div class="previous">
-            Recently completed 
+            Recently completed<br />
+            {{ recent|safe }}
         </div>
 
         <a href="{{ url_logout }}">{{ url_logout_text }}</a>

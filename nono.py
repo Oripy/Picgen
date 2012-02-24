@@ -15,7 +15,7 @@ from nonogram.nonogram_creator import next_valid_number
 from nonogram.picgen import number_to_table, number_to_name, name_to_number
 import nonogram.solver as solver 
 
-from display_problems import display_nonogram
+from display_problems import display_nonogram, display_img
 
 ZOOM = 30
 WIDTH = 5
@@ -50,22 +50,6 @@ class Grid_db(db.Model):
 def grid_key(grid_name=None):
     """ Constructs a datastore key for a Grid entity with grid_name."""
     return db.Key.from_path('Grid', grid_name or 'default_grid')
-
-def display_img(table):
-    """ Display a grid """
-    out = '<div class="outline">'
-    for i in xrange(len(table)):
-        out += '<div class="picture">'
-        for j in xrange(len(table[0])):
-            if table[i][j]:
-                out += '<div class="imgblack"></div>'
-#                out += '<img src="images/black.png" height=10 width=10 />'
-            else:
-                out += '<div class="imgwhite"></div>'
-#                out += '<img src="images/white.png" height=10 width=10 />'
-        out += '</div>'
-    out += "</div>"
-    return out
 
 class RPCHandler(webapp2.RequestHandler):
     """ Allows the functions defined in the RPCMethods class to be RPCed."""
@@ -136,6 +120,7 @@ class RPCHandler(webapp2.RequestHandler):
             grid = self._get_db_entry(name)
             result = grid.get()
             if result:
+                result.grid_table = self._decode_table(table)
                 result.state = 1
                 result.put()
         else:
@@ -263,8 +248,19 @@ class MainPage(webapp2.RequestHandler):
             nonogram = display_nonogram(grid)
             
             ##############"
-            # Display the table for help
-#            nonogram += display_img(table)            
+            # Display recent results
+            recentquery = db.GqlQuery("SELECT * "
+                                    "FROM Grid_db "
+                                    "WHERE user = :user AND "
+                                    "state = 1 AND "
+                                    "ANCESTOR IS :ancestor "
+                                    "ORDER BY date DESC LIMIT 5",
+                                    user = userlogin,
+                                    ancestor = grid_key())
+            recent = ''
+            for item in recentquery:
+                recent += display_img(item.grid_table)
+                recent += '<br />&nbsp;<br />'
             
             # Set the Logout link
             url_logout = users.create_logout_url(self.request.uri)
@@ -280,7 +276,8 @@ class MainPage(webapp2.RequestHandler):
                 'nonogram_name': name,
                 'url_logout': url_logout,
                 'url_logout_text': url_logout_text,
-                'text_info': text_info
+                'text_info': text_info,
+                'recent': recent
             }
             
             # Display the page from the template

@@ -17,7 +17,7 @@ def display_nonogram(grid):
     out = '<input id="table" type="hidden" disabled=True size=100 value="{}" />'.format(encode_table(grid.get_grid()))
 
     for line_nbr in xrange(height_col_counts-1, -1, -1):
-        line = '<div class="picture">'
+        line = '<div class="line">'
         for _ in xrange(width_row_counts):
             line += '<div class="empty">&nbsp;</div>'
         for col_count in grid.col_counts:
@@ -32,7 +32,7 @@ def display_nonogram(grid):
         out += line
     
     for row_nbr in xrange(grid.height):
-        line = '<div class="picture">'
+        line = '<div class="line">'
         for col_nbr in xrange(width_row_counts-1, -1, -1):
             if len(grid.row_counts[row_nbr]) > col_nbr:
                 line += '<div class="clues">'
@@ -62,6 +62,19 @@ def display_nonogram(grid):
 #    out += '</div><br />'
     out += '<br />&nbsp;<br />'
     
+    return out
+
+def display_img(table):
+    """ Output the HTML code to display a Picture """
+    out = ''
+    for i in xrange(len(table)):
+        out += '<div class="line">'
+        for j in xrange(len(table[0])):
+            if table[i][j]:
+                out += '<img class="case" src="images/black.png" />'
+            else:
+                out += '<img class="case" src="images/white.png" />'
+        out += '</div>'
     return out
     
 def encode_table(table):
